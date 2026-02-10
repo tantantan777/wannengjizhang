@@ -1,33 +1,76 @@
 import SwiftUI
 
 struct AssetsView: View {
-    // 模拟数据源
-    @State private var items: [Asset] = .sample
+    // MARK: - 核心：引入 AssetManager 进行数据管理
+    @StateObject private var manager = AssetManager()
     
-    // 状态控制
-    @State private var isExpandedMoney: Bool = false
-    @State private var isExpandedCredit: Bool = false
-    @State private var isExpandedPayable: Bool = false
+    // 控制添加页面的弹出
+    @State private var showAddAssetSheet = false
+    
+    // 列表展开状态控制
+    @State private var isExpandedMoney: Bool = true
+    @State private var isExpandedCredit: Bool = true
+    @State private var isExpandedRecharge: Bool = true
+    @State private var isExpandedInvestment: Bool = true
+    @State private var isExpandedReceivable: Bool = true
+    @State private var isExpandedPayable: Bool = true
+    
+    // 控制金额是否显示（隐私模式）
     @State private var showAmounts: Bool = true
     
-    // MARK: - 计算属性
-    var moneyAccounts: [Asset] { items.filter { $0.type == .money } }
-    var creditAccounts: [Asset] { items.filter { $0.type == .credit } }
-    var payableAccounts: [Asset] { items.filter { $0.type == .payable } }
+    // MARK: - 计算属性 (基于 manager.assets 进行筛选)
+    var moneyAccounts: [Asset] { manager.assets.filter { $0.type == .money } }
+    var creditAccounts: [Asset] { manager.assets.filter { $0.type == .credit } }
+    var rechargeAccounts: [Asset] { manager.assets.filter { $0.type == .recharge } }
+    var investmentAccounts: [Asset] { manager.assets.filter { $0.type == .investment } }
+    var receivableAccounts: [Asset] { manager.assets.filter { $0.type == .receivable } }
+    var payableAccounts: [Asset] { manager.assets.filter { $0.type == .payable } }
     
+    // 统计逻辑
     var totalAssets: Double {
-        items.filter { !$0.type.isLiability }.map { $0.balance }.reduce(0, +)
+        manager.assets.filter { !$0.type.isLiability && $0.includeInTotal }.map { $0.balance }.reduce(0, +)
     }
     var totalLiabilities: Double {
-        items.filter { $0.type.isLiability }.map { abs($0.balance) }.reduce(0, +)
+        manager.assets.filter { $0.type.isLiability && $0.includeInTotal }.map { abs($0.balance) }.reduce(0, +)
     }
     var netAssets: Double { totalAssets - totalLiabilities }
     
     var totalBorrowed: Double {
-        items.filter { $0.type == .credit || $0.type == .payable }.map { abs($0.balance) }.reduce(0, +)
+        payableAccounts.map { abs($0.balance) }.reduce(0, +) +
+        creditAccounts.map { abs($0.balance) }.reduce(0, +)
     }
     var totalLent: Double {
-        items.filter { $0.type == .receivable }.map { abs($0.balance) }.reduce(0, +)
+        receivableAccounts.map { abs($0.balance) }.reduce(0, +)
+    }
+    
+    // 辅助方法：获取当前货币代码
+    var currentCurrencyCode: String {
+        if #available(iOS 16, *) {
+            return Locale.current.currency?.identifier ?? "CNY"
+        } else {
+            return Locale.current.currencyCode ?? "CNY"
+        }
+    }
+    
+    // MARK: - 核心逻辑：计算需要显示的分组
+    // 定义一个临时结构体来辅助渲染
+    private struct AssetGroup: Identifiable {
+        var id: String { title } // 使用标题作为稳定 ID，防止列表闪烁
+        let title: String
+        let items: [Asset]
+        let isExpanded: Binding<Bool>
+    }
+    
+    // 动态生成只包含“有数据”的分组数组
+    private var visibleGroups: [AssetGroup] {
+        [
+            AssetGroup(title: "资金账户", items: moneyAccounts, isExpanded: $isExpandedMoney),
+            AssetGroup(title: "信用账户", items: creditAccounts, isExpanded: $isExpandedCredit),
+            AssetGroup(title: "充值账户", items: rechargeAccounts, isExpanded: $isExpandedRecharge),
+            AssetGroup(title: "理财账户", items: investmentAccounts, isExpanded: $isExpandedInvestment),
+            AssetGroup(title: "应收账户", items: receivableAccounts, isExpanded: $isExpandedReceivable),
+            AssetGroup(title: "应付账户", items: payableAccounts, isExpanded: $isExpandedPayable)
+        ].filter { !$0.items.isEmpty } // 关键点：过滤掉空的账户列表
     }
 
     var body: some View {
@@ -45,61 +88,48 @@ struct AssetsView: View {
                                 iconColor: .white, iconBg: Color(hex: "56C18E"))
                     }
                     
-                    // 3. 账户列表
-                    VStack(spacing: 8) {
-                        CustomDisclosureGroup(
-                            title: "资金账户",
-                            count: moneyAccounts.count,
-                            amountLabel: "余额",
-                            amount: moneyAccounts.map{$0.balance}.reduce(0, +),
-                            items: moneyAccounts,
-                            isExpanded: $isExpandedMoney,
-                            showAmounts: showAmounts
-                        )
-                        
-                        // 仅在两者都折叠时显示分割线，或者始终显示分割线以区分区域
-                        // 为了视觉整洁，这里我们保留分割线，但在展开时分割线会在卡片上方
-                        Divider().padding(.horizontal)
-                        
-                        CustomDisclosureGroup(
-                            title: "信用账户",
-                            count: creditAccounts.count,
-                            amountLabel: "欠款",
-                            amount: creditAccounts.map{abs($0.balance)}.reduce(0, +),
-                            items: creditAccounts,
-                            isExpanded: $isExpandedCredit,
-                            showAmounts: showAmounts
-                        )
-                        
-                        Divider().padding(.horizontal)
-                        
-                        CustomDisclosureGroup(
-                            title: "应付账户",
-                            count: payableAccounts.count,
-                            amountLabel: "欠款",
-                            amount: payableAccounts.map{abs($0.balance)}.reduce(0, +),
-                            items: payableAccounts,
-                            isExpanded: $isExpandedPayable,
-                            showAmounts: showAmounts
-                        )
+                    // 3. 动态显示的账户列表
+                    if visibleGroups.isEmpty {
+                        // 如果所有账户都为空，显示一个友好的空状态
+                        VStack(spacing: 12) {
+                            Image(systemName: "tray")
+                                .font(.largeTitle)
+                                .foregroundStyle(.tertiary)
+                            Text("暂无账户，点击左上角添加")
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.top, 40)
+                        .opacity(0.7)
+                    } else {
+                        VStack(spacing: 8) {
+                            // 遍历可见的分组
+                            ForEach(Array(visibleGroups.enumerated()), id: \.element.id) { index, group in
+                                groupView(title: group.title, items: group.items, isExpanded: group.isExpanded)
+                                
+                                // 智能分割线：只有当不是最后一个元素时，才显示分割线
+                                if index < visibleGroups.count - 1 {
+                                    Divider().padding(.horizontal)
+                                }
+                            }
+                        }
+                        .padding(.top, 8)
                     }
-                    .padding(.top, 8)
                 }
                 .padding()
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("资产")
             .toolbar {
+                // 左上角：添加按钮
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(action: {
-                        print("点击添加")
-                    }) {
+                    Button(action: { showAddAssetSheet = true }) {
                         Image(systemName: "plus")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(.primary)
                     }
                 }
                 
+                // 右上角：头像入口
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(destination: UserProfileView()) {
                         Image(systemName: "person.crop.circle")
@@ -112,7 +142,31 @@ struct AssetsView: View {
                     }
                 }
             }
+            // 绑定添加账户的 Sheet
+            .sheet(isPresented: $showAddAssetSheet) {
+                AddAssetView { newAsset in
+                    manager.add(newAsset) // 保存到本地
+                    showAddAssetSheet = false // 关闭弹窗
+                }
+            }
         }
+    }
+    
+    // 列表组视图生成器
+    func groupView(title: String, items: [Asset], isExpanded: Binding<Bool>) -> some View {
+        let amount = items.map { abs($0.balance) }.reduce(0, +)
+        let label = items.first?.type.isLiability == true ? "欠款" : "余额"
+        
+        return CustomDisclosureGroup(
+            title: title,
+            count: items.count,
+            amountLabel: label,
+            amount: amount,
+            items: items,
+            isExpanded: isExpanded,
+            showAmounts: showAmounts,
+            currencyCode: currentCurrencyCode
+        )
     }
     
     // MARK: - 净资产卡片
@@ -128,21 +182,21 @@ struct AssetsView: View {
                         .font(.caption)
                 }
             }
-            Text(showAmounts ? (netAssets.formatted(.currency(code: Locale.current.currencyCode ?? "CNY"))) : "****")
+            Text(showAmounts ? (netAssets.formatted(.currency(code: currentCurrencyCode))) : "****")
                 .font(.system(size: 36, weight: .bold, design: .rounded))
                 .foregroundStyle(.primary)
             HStack(spacing: 20) {
                 HStack(spacing: 4) {
                     Text("总资产")
                         .foregroundStyle(.secondary)
-                    Text(showAmounts ? (totalAssets.formatted(.currency(code: Locale.current.currencyCode ?? "CNY"))) : "****")
+                    Text(showAmounts ? (totalAssets.formatted(.currency(code: currentCurrencyCode))) : "****")
                         .foregroundStyle(.secondary)
                 }
                 .font(.footnote)
                 HStack(spacing: 4) {
                     Text("总负债")
                         .foregroundStyle(.secondary)
-                    Text(showAmounts ? (totalLiabilities.formatted(.currency(code: Locale.current.currencyCode ?? "CNY"))) : "****")
+                    Text(showAmounts ? (totalLiabilities.formatted(.currency(code: currentCurrencyCode))) : "****")
                         .foregroundStyle(.secondary)
                 }
                 .font(.footnote)
@@ -170,7 +224,7 @@ struct AssetsView: View {
                 Text(title)
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text(showAmounts ? (amount.formatted(.currency(code: Locale.current.currencyCode ?? "CNY"))) : "****")
+                Text(showAmounts ? (amount.formatted(.currency(code: currentCurrencyCode))) : "****")
                     .font(.callout.bold())
                     .foregroundStyle(.primary)
             }
@@ -183,7 +237,7 @@ struct AssetsView: View {
     }
 }
 
-// MARK: - 混合风格列表分组组件 (标题沉浸，内容卡片)
+// MARK: - 沉浸式列表分组组件
 struct CustomDisclosureGroup: View {
     let title: String
     let count: Int
@@ -192,10 +246,11 @@ struct CustomDisclosureGroup: View {
     let items: [Asset]
     @Binding var isExpanded: Bool
     let showAmounts: Bool
+    let currencyCode: String
     
     var body: some View {
         VStack(spacing: 0) {
-            // 1. 标题栏：保持沉浸式（无背景）
+            // 标题栏：保持沉浸式（无背景）
             Button {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
                     isExpanded.toggle()
@@ -205,15 +260,12 @@ struct CustomDisclosureGroup: View {
                     Text("\(title)")
                         .font(.body.bold())
                         .foregroundStyle(.primary)
-                    
                     Text("(\(count))")
                         .font(.body)
                         .foregroundStyle(.secondary)
-                    
                     Spacer()
-                    
                     if showAmounts {
-                        Text("\(amountLabel): \(amount.formatted(.currency(code: Locale.current.currencyCode ?? "CNY")))")
+                        Text("\(amountLabel): \(amount.formatted(.currency(code: currencyCode)))")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     } else {
@@ -221,7 +273,6 @@ struct CustomDisclosureGroup: View {
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
-                    
                     Image(systemName: "chevron.right")
                         .font(.caption.bold())
                         .foregroundStyle(.tertiary)
@@ -232,33 +283,42 @@ struct CustomDisclosureGroup: View {
                 .contentShape(Rectangle())
             }
             
-            // 2. 展开的内容：卡片式（有背景 + 圆角）
+            // 展开的内容：卡片式（有背景 + 圆角）
             if isExpanded {
                 VStack(spacing: 0) {
-                    ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                        HStack {
-                            Text(item.name)
-                                .font(.body)
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            Text(showAmounts ? item.balance.formatted(.currency(code: Locale.current.currencyCode ?? "CNY")) : "****")
-                                .font(.body)
-                                .foregroundStyle(item.type.isLiability ? Color.red : .primary)
-                        }
-                        .padding(.vertical, 14) // 增加卡片内部行高，更美观
-                        .padding(.horizontal, 16)
-                        
-                        // 卡片内部的分割线
-                        if index < items.count - 1 {
-                            Divider().padding(.leading, 16)
+                    if items.isEmpty {
+                        Text("暂无账户")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding()
+                    } else {
+                        ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                            HStack {
+                                // 显示自定义的图标和颜色
+                                Image(systemName: item.iconName)
+                                    .foregroundStyle(Color(item.iconColor) ?? .blue)
+                                Text(item.name)
+                                    .font(.body)
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Text(showAmounts ? item.balance.formatted(.currency(code: currencyCode)) : "****")
+                                    .font(.body)
+                                    .foregroundStyle(item.type.isLiability ? Color.red : .primary)
+                            }
+                            .padding(.vertical, 14)
+                            .padding(.horizontal, 16)
+                            
+                            // 分割线 (最后一行除外)
+                            if index < items.count - 1 {
+                                Divider().padding(.leading, 16)
+                            }
                         }
                     }
                 }
-                // MARK: 关键修改点
-                .background(Color(.secondarySystemGroupedBackground)) // 恢复卡片背景（白色/深灰）
-                .cornerRadius(16) // 添加圆角
-                .padding(.top, 4) // 让卡片和标题栏有一点点间距
-                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4) // 稍微加点阴影，突出悬浮感
+                .background(Color(.secondarySystemGroupedBackground))
+                .cornerRadius(16)
+                .padding(.top, 4)
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
             }
         }
     }
@@ -288,6 +348,19 @@ extension Color {
             blue: Double(b) / 255,
             opacity: Double(a) / 255
         )
+    }
+    
+    // 字符串转颜色辅助
+    init?(_ name: String) {
+        switch name {
+        case "blue": self = .blue
+        case "green": self = .green
+        case "red": self = .red
+        case "orange": self = .orange
+        case "purple": self = .purple
+        case "gray": self = .gray
+        default: return nil
+        }
     }
 }
 

@@ -50,6 +50,19 @@ struct PlaceholderView: View {
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink(destination: UserProfileView()) {
+                        Image(systemName: "person.crop.circle")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 32, height: 32)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                            .foregroundStyle(.primary)
+                    }
+                }
+            }
         }
     }
 }
