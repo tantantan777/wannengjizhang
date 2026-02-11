@@ -17,7 +17,8 @@ struct AddAssetView: View {
     
     let moneyAccounts = [
         AccountTemplate(name: "支付宝", icon: "yen.circle.fill", color: .blue),
-        AccountTemplate(name: "微信钱包", icon: "message.circle.fill", color: .green)
+        AccountTemplate(name: "微信钱包", icon: "message.circle.fill", color: .green),
+        AccountTemplate(name: "储蓄卡", icon: "creditcard.fill", color: .orange)
     ]
     let creditAccounts = [
         AccountTemplate(name: "蚂蚁花呗", icon: "creditcard.circle.fill", color: .blue),
@@ -66,17 +67,33 @@ struct AddAssetView: View {
         Section(header: Text(title)) {
             ForEach(items) { item in
                 // MARK: - 关键：将 onSave 传递给下一级页面
-                NavigationLink(destination: AddAccountDetailView(template: item, type: type, onSave: onSave)) {
-                    HStack(spacing: 12) {
-                        Image(systemName: item.icon)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 24, height: 24)
-                            .foregroundStyle(item.color)
-                        Text(item.name)
-                            .foregroundStyle(.primary)
+                // 如果是储蓄卡，跳转到银行选择页面；否则直接跳转到详情页
+                if item.name == "储蓄卡" {
+                    NavigationLink(destination: BankSelectionView(type: type, onSave: onSave)) {
+                        HStack(spacing: 12) {
+                            Image(systemName: item.icon)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 24, height: 24)
+                                .foregroundStyle(item.color)
+                            Text(item.name)
+                                .foregroundStyle(.primary)
+                        }
+                        .padding(.vertical, 4)
                     }
-                    .padding(.vertical, 4)
+                } else {
+                    NavigationLink(destination: AddAccountDetailView(template: item, type: type, onSave: onSave)) {
+                        HStack(spacing: 12) {
+                            Image(systemName: item.icon)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 24, height: 24)
+                                .foregroundStyle(item.color)
+                            Text(item.name)
+                                .foregroundStyle(.primary)
+                        }
+                        .padding(.vertical, 4)
+                    }
                 }
             }
         }

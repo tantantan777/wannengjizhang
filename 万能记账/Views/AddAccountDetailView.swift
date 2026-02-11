@@ -27,11 +27,19 @@ struct AddAccountDetailView: View {
         Form {
             Section {
                 HStack {
-                    Image(systemName: template.icon)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 32, height: 32)
-                        .foregroundStyle(template.color)
+                    // 判断是否为系统图标（包含"."或"fill"）还是自定义图片
+                    if template.icon.contains(".") || template.icon.contains("fill") {
+                        Image(systemName: template.icon)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 32, height: 32)
+                            .foregroundStyle(template.color)
+                    } else {
+                        Image(template.icon)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                    }
                     Text(template.name)
                         .font(.headline)
                     Spacer()
