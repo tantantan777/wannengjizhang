@@ -1,0 +1,15 @@
+{
+  "images" : [
+    {
+      "filename" : "法国里昂信贷银行LCL.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
+  }
+}

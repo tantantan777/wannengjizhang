@@ -1,0 +1,15 @@
+{
+  "images" : [
+    {
+      "filename" : "印度国家银行SBI.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
+  }
+}

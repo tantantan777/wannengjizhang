@@ -42,25 +42,19 @@ struct AddAssetView: View {
     ]
 
     var body: some View {
-        NavigationStack {
-            List {
-                sectionView(title: "资金账户", items: moneyAccounts, type: .money)
-                sectionView(title: "信用账户", items: creditAccounts, type: .credit)
-                sectionView(title: "充值账户", items: rechargeAccounts, type: .recharge)
-                sectionView(title: "理财账户", items: investmentAccounts, type: .investment)
-                sectionView(title: "应收账户", items: receivableAccounts, type: .receivable)
-                sectionView(title: "应付账户", items: payableAccounts, type: .payable)
-            }
-            .navigationTitle("选择类型")
-            .navigationBarTitleDisplayMode(.inline)
-            .listStyle(.grouped)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("取消") { dismiss() }
-                }
-            }
-            .background(Color(.systemGroupedBackground))
+        List {
+            sectionView(title: "资金账户", items: moneyAccounts, type: .money)
+            sectionView(title: "信用账户", items: creditAccounts, type: .credit)
+            sectionView(title: "充值账户", items: rechargeAccounts, type: .recharge)
+            sectionView(title: "理财账户", items: investmentAccounts, type: .investment)
+            sectionView(title: "应收账户", items: receivableAccounts, type: .receivable)
+            sectionView(title: "应付账户", items: payableAccounts, type: .payable)
         }
+        .navigationTitle("选择类型")
+        .navigationBarTitleDisplayMode(.inline)
+        .listStyle(.grouped)
+        .toolbar(.hidden, for: .tabBar)
+        .background(Color(.systemGroupedBackground))
     }
     
     func sectionView(title: String, items: [AccountTemplate], type: AssetType) -> some View {

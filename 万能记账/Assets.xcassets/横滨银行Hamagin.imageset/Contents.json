@@ -1,0 +1,15 @@
+{
+  "images" : [
+    {
+      "filename" : "横滨银行Hamagin.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
+  }
+}

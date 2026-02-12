@@ -4,9 +4,6 @@ struct AssetsView: View {
     // MARK: - 核心：引入 AssetManager 进行数据管理
     @StateObject private var manager = AssetManager()
     
-    // 控制添加页面的弹出
-    @State private var showAddAssetSheet = false
-    
     // 列表展开状态控制
     @State private var isExpandedMoney: Bool = true
     @State private var isExpandedCredit: Bool = true
@@ -122,13 +119,15 @@ struct AssetsView: View {
             .toolbar {
                 // 左上角：添加按钮
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(action: { showAddAssetSheet = true }) {
+                    NavigationLink(destination: AddAssetView { newAsset in
+                        manager.add(newAsset)
+                    }) {
                         Image(systemName: "plus")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(.primary)
                     }
                 }
-                
+
                 // 右上角：头像入口
                 ToolbarItem(placement: .topBarTrailing) {
                     NavigationLink(destination: UserProfileView()) {
@@ -140,13 +139,6 @@ struct AssetsView: View {
                             .overlay(Circle().stroke(Color.primary.opacity(0.1), lineWidth: 1))
                             .foregroundStyle(.primary)
                     }
-                }
-            }
-            // 绑定添加账户的 Sheet
-            .sheet(isPresented: $showAddAssetSheet) {
-                AddAssetView { newAsset in
-                    manager.add(newAsset) // 保存到本地
-                    showAddAssetSheet = false // 关闭弹窗
                 }
             }
         }

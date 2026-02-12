@@ -5,9 +5,15 @@ import SwiftUI
 
 @main
 struct WannengJizhangApp: App {
+    @AppStorage("isLoggedIn") private var isLoggedIn: Bool = false
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if isLoggedIn {
+                ContentView()
+            } else {
+                LoginView()
+            }
         }
     }
 }

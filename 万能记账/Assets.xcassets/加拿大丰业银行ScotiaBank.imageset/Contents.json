@@ -1,0 +1,15 @@
+{
+  "images" : [
+    {
+      "filename" : "加拿大丰业银行ScotiaBank.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
+  }
+}
