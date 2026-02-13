@@ -16,8 +16,12 @@ struct AddAssetView: View {
     }
     
     let moneyAccounts = [
-        AccountTemplate(name: "支付宝", icon: "yen.circle.fill", color: .blue),
-        AccountTemplate(name: "微信钱包", icon: "message.circle.fill", color: .green),
+        AccountTemplate(name: "支付宝", icon: "支付宝", color: .blue),
+        AccountTemplate(name: "微信钱包", icon: "微信", color: .green),
+        AccountTemplate(name: "QQ钱包", icon: "QQ钱包", color: .blue),
+        AccountTemplate(name: "抖音钱包", icon: "抖音钱包", color: .black),
+        AccountTemplate(name: "PayPal", icon: "PayPal", color: .blue),
+        AccountTemplate(name: "钱包", icon: "wallet.pass.fill", color: .brown),
         AccountTemplate(name: "储蓄卡", icon: "creditcard.fill", color: .orange)
     ]
     let creditAccounts = [
@@ -30,15 +34,8 @@ struct AddAssetView: View {
     ]
     let investmentAccounts = [
         AccountTemplate(name: "股票", icon: "chart.bar.xaxis", color: .red),
-        AccountTemplate(name: "基金", icon: "chart.xyaxis.line", color: .red)
-    ]
-    let receivableAccounts = [
-        AccountTemplate(name: "借出", icon: "arrow.up.circle.fill", color: .green),
-        AccountTemplate(name: "其他应收", icon: "ellipsis.circle.fill", color: .gray)
-    ]
-    let payableAccounts = [
-        AccountTemplate(name: "借入", icon: "arrow.down.circle.fill", color: .red),
-        AccountTemplate(name: "其他应付", icon: "ellipsis.circle.fill", color: .gray)
+        AccountTemplate(name: "基金", icon: "chart.xyaxis.line", color: .red),
+        AccountTemplate(name: "数字货币", icon: "数字货币", color: .orange)
     ]
 
     var body: some View {
@@ -47,8 +44,6 @@ struct AddAssetView: View {
             sectionView(title: "信用账户", items: creditAccounts, type: .credit)
             sectionView(title: "充值账户", items: rechargeAccounts, type: .recharge)
             sectionView(title: "理财账户", items: investmentAccounts, type: .investment)
-            sectionView(title: "应收账户", items: receivableAccounts, type: .receivable)
-            sectionView(title: "应付账户", items: payableAccounts, type: .payable)
         }
         .navigationTitle("选择类型")
         .navigationBarTitleDisplayMode(.inline)
@@ -65,11 +60,20 @@ struct AddAssetView: View {
                 if item.name == "储蓄卡" {
                     NavigationLink(destination: BankSelectionView(type: type, onSave: onSave)) {
                         HStack(spacing: 12) {
-                            Image(systemName: item.icon)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 24, height: 24)
-                                .foregroundStyle(item.color)
+                            if item.icon.contains(".") {
+                                // 系统图标
+                                Image(systemName: item.icon)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 24, height: 24)
+                                    .foregroundStyle(item.color)
+                            } else {
+                                // 自定义svg图标
+                                Image(item.icon)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 24, height: 24)
+                            }
                             Text(item.name)
                                 .foregroundStyle(.primary)
                         }
@@ -78,11 +82,20 @@ struct AddAssetView: View {
                 } else {
                     NavigationLink(destination: AddAccountDetailView(template: item, type: type, onSave: onSave)) {
                         HStack(spacing: 12) {
-                            Image(systemName: item.icon)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 24, height: 24)
-                                .foregroundStyle(item.color)
+                            if item.icon.contains(".") {
+                                // 系统图标
+                                Image(systemName: item.icon)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 24, height: 24)
+                                    .foregroundStyle(item.color)
+                            } else {
+                                // 自定义svg图标
+                                Image(item.icon)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 24, height: 24)
+                            }
                             Text(item.name)
                                 .foregroundStyle(.primary)
                         }
