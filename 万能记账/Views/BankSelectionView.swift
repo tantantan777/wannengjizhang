@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BankSelectionView: View {
     @Environment(\.dismiss) var dismiss
+    @State private var searchText = ""
 
     let type: AssetType
     var onSave: (Asset) -> Void
@@ -182,35 +183,82 @@ struct BankSelectionView: View {
         BankTemplate(name: "自贡银行", icon: "自贡银行", color: .red)
     ]
 
+    var filteredBanks: [BankTemplate] {
+        if searchText.isEmpty {
+            return banks
+        } else {
+            return banks.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        }
+    }
+
+    // 获取银行名称的首字母
+    func getFirstLetter(from name: String) -> String {
+        guard let firstChar = name.first else { return "#" }
+        let str = String(firstChar)
+
+        // 如果是英文字母，直接返回大写
+        if str.range(of: "[A-Za-z]", options: .regularExpression) != nil {
+            return str.uppercased()
+        }
+
+        // 如果是中文，转换为拼音首字母
+        let mutableString = NSMutableString(string: str) as CFMutableString
+        CFStringTransform(mutableString, nil, kCFStringTransformToLatin, false)
+        CFStringTransform(mutableString, nil, kCFStringTransformStripDiacritics, false)
+        let pinyin = mutableString as String
+
+        if let firstPinyinChar = pinyin.first, firstPinyinChar.isLetter {
+            return String(firstPinyinChar).uppercased()
+        }
+
+        return "#"
+    }
+
+    // 按首字母分组的银行列表
+    var groupedBanks: [(String, [BankTemplate])] {
+        let grouped = Dictionary(grouping: filteredBanks) { bank in
+            getFirstLetter(from: bank.name)
+        }
+        return grouped.sorted { $0.key < $1.key }
+    }
+
+    // 获取所有的首字母索引
+    var sectionIndexTitles: [String] {
+        groupedBanks.map { $0.0 }
+    }
+
     var body: some View {
         List {
-            Section(header: Text("选择银行")) {
-                ForEach(banks) { bank in
-                    NavigationLink(destination: AddAccountDetailView(
-                        template: AddAssetView.AccountTemplate(
-                            name: bank.name,
-                            icon: bank.icon,
-                            color: bank.color
-                        ),
-                        type: type,
-                        onSave: onSave
-                    )) {
-                        HStack(spacing: 12) {
-                            Image(bank.icon)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 24, height: 24)
-                            Text(bank.name)
-                                .foregroundStyle(.primary)
+            ForEach(groupedBanks, id: \.0) { letter, banksInSection in
+                Section(header: Text(letter)) {
+                    ForEach(banksInSection) { bank in
+                        NavigationLink(destination: AddAccountDetailView(
+                            template: AddAssetView.AccountTemplate(
+                                name: bank.name,
+                                icon: bank.icon,
+                                color: bank.color
+                            ),
+                            type: type,
+                            onSave: onSave
+                        )) {
+                            HStack(spacing: 12) {
+                                Image(bank.icon)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 24, height: 24)
+                                Text(bank.name)
+                                    .foregroundStyle(.primary)
+                            }
+                            .padding(.vertical, 4)
                         }
-                        .padding(.vertical, 4)
                     }
                 }
             }
         }
         .navigationTitle("选择银行")
         .navigationBarTitleDisplayMode(.inline)
-        .listStyle(.grouped)
+        .searchable(text: $searchText, prompt: "搜索银行")
+        .listStyle(.plain)
         .background(Color(.systemGroupedBackground))
     }
 }
